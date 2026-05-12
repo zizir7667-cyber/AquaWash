@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AquaWash — სამრეცხაო</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #0099cc;
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --text-muted: #334155;
+    --glow: 0 0 30px rgba(0,212,255,0.15);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Noto Sans Georgian', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content:'';
+    position: fixed;
+    inset:0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(0,212,255,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,153,204,0.04) 0%, transparent 60%);
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* Maintenance overlay */
+  #maintenance-overlay {
+    position: fixed; inset:0; z-index:1000;
+    background: var(--bg);
+    display: flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:16px;
+    font-size:1.1rem; color: var(--text-dim);
+  }
+  #maintenance-overlay .icon { font-size:3rem; }
+  #maintenance-overlay.hidden { display:none; }
+
+  /* Header */
+  header {
+    position: relative; z-index:10;
+    padding: 20px 24px;
+    display: flex; align-items:center; justify-content:space-between;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+  }
+  .logo { display:flex; align-items:center; gap:10px; }
+  .logo-icon {
+    width:40px; height:40px; border-radius:12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.2rem; box-shadow: 0 0 20px rgba(0,212,255,0.3);
+  }
+  .logo-name { font-size:1.3rem; font-weight:800; letter-spacing:-0.5px; }
+  .status-badge {
+    display:flex; align-items:center; gap:6px;
+    background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
+    padding: 6px 12px; border-radius:20px; font-size:0.75rem; color: var(--green);
+  }
+  .status-dot {
+    width:6px; height:6px; border-radius:50%; background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  /* Main */
+  main {
+    position:relative; z-index:1;
+    padding: 24px 16px 100px;
+    max-width: 480px; margin: 0 auto;
+  }
+
+  /* Hero */
+  .hero {
+    text-align:center; padding: 32px 0 40px;
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero h1 {
+    font-size:clamp(1.6rem,5vw,2.2rem);
+    font-weight:800; line-height:1.2;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    margin-bottom:10px;
+  }
+  .hero p { color: var(--text-dim); font-size:0.9rem; line-height:1.6; }
+  .steps {
+    display:flex; justify-content:center; gap:8px;
+    margin-top:20px; flex-wrap:wrap;
+  }
+  .step {
+    display:flex; align-items:center; gap:6px;
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 6px 12px; border-radius:20px; font-size:0.78rem; color: var(--text-dim);
+  }
+  .step-num {
+    width:18px; height:18px; border-radius:50%;
+    background: var(--accent); color: #000; font-size:0.65rem;
+    display:flex; align-items:center; justify-content:center; font-weight:700;
+  }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:none;} }
+
+  /* Machines grid */
+  .section-title {
+    font-size:0.7rem; font-weight:700; letter-spacing:2px;
+    color: var(--text-dim); text-transform:uppercase; margin-bottom:16px;
+  }
+  .machines-grid {
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr));
+    gap:12px; margin-bottom:32px;
+  }
+  .machine-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius:16px; padding:20px;
+    cursor:pointer; transition: all 0.2s ease;
+    animation: fadeUp 0.5s ease both;
+    position:relative; overflow:hidden;
+  }
+  .machine-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background: var(--accent); opacity:0; transition:opacity 0.2s;
+  }
+  .machine-card:hover { border-color: var(--accent); transform:translateY(-2px); box-shadow: var(--glow); }
+  .machine-card:hover::before { opacity:1; }
+  .machine-card.free::before { background: var(--green); opacity:1; }
+  .machine-card.busy { cursor:not-allowed; opacity:0.6; }
+  .machine-card.busy::before { background: var(--yellow); opacity:1; }
+  .machine-card.offline { cursor:not-allowed; opacity:0.4; }
+  .machine-card.offline::before { background: var(--red); opacity:1; }
+
+  .machine-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+  .machine-num {
+    font-family:'Space Mono',monospace; font-size:1.6rem; font-weight:700;
+    color: var(--accent); line-height:1;
+  }
+  .machine-status-badge {
+    font-size:0.65rem; font-weight:700; letter-spacing:1px;
+    padding: 3px 8px; border-radius:10px; text-transform:uppercase;
+  }
+  .free .machine-status-badge { background:rgba(16,185,129,0.15); color:var(--green); }
+  .busy .machine-status-badge { background:rgba(245,158,11,0.15); color:var(--yellow); }
+  .offline .machine-status-badge { background:rgba(239,68,68,0.15); color:var(--red); }
+
+  .machine-name { font-size:0.85rem; font-weight:600; margin-bottom:4px; }
+  .machine-price {
+    font-family:'Space Mono',monospace; font-size:1.1rem;
+    color: var(--accent); font-weight:700;
+  }
+
+  /* Timer bar */
+  .timer-bar-wrap { margin-top:12px; }
+  .timer-label { font-size:0.7rem; color:var(--text-dim); margin-bottom:4px; display:flex; justify-content:space-between; }
+  .timer-bar { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .timer-fill { height:100%; background:var(--yellow); border-radius:2px; transition:width 1s linear; }
+  .timer-countdown { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(--yellow); }
+
+  /* Payment modal */
+  .modal-bg {
+    position:fixed; inset:0; z-index:100;
+    background:rgba(0,0,0,0.7); backdrop-filter:blur(6px);
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity 0.3s;
+  }
+  .modal-bg.open { opacity:1; pointer-events:all; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius:24px 24px 0 0; padding:28px 24px 40px;
+    width:100%; max-width:480px;
+    transform:translateY(100%); transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .modal-bg.open .modal { transform:translateY(0); }
+  .modal-handle { width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px; }
+  .modal-title { font-size:1.2rem; font-weight:800; margin-bottom:4px; }
+  .modal-sub { font-size:0.8rem; color:var(--text-dim); margin-bottom:24px; }
+
+  /* Bank selector */
+  .bank-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+  .bank-btn {
+    background:var(--surface2); border:2px solid var(--border);
+    border-radius:14px; padding:16px; cursor:pointer;
+    transition:all 0.2s; text-align:center;
+  }
+  .bank-btn:hover { border-color:var(--accent); }
+  .bank-btn.selected { border-color:var(--accent); background:rgba(0,212,255,0.08); }
+  .bank-btn .bank-icon { font-size:1.8rem; margin-bottom:6px; }
+  .bank-btn .bank-name { font-size:0.8rem; font-weight:700; }
+  .bank-btn .bank-sub { font-size:0.65rem; color:var(--text-dim); }
+
+  /* Payment details */
+  .pay-details { display:none; }
+  .pay-details.visible { display:block; }
+  .pay-amount-big {
+    text-align:center; margin-bottom:20px;
+    font-family:'Space Mono',monospace; font-size:2.5rem; font-weight:700;
+    color:var(--accent);
+  }
+  .pay-field {
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:12px; padding:14px 16px; margin-bottom:10px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .pay-field-label { font-size:0.7rem; color:var(--text-dim); margin-bottom:3px; }
+  .pay-field-value { font-size:0.85rem; font-weight:600; font-family:'Space Mono',monospace; }
+  .copy-btn {
+    background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.2);
+    color:var(--accent); border-radius:8px; padding:6px 10px;
+    font-size:0.7rem; cursor:pointer; transition:all 0.2s; white-space:nowrap;
+  }
+  .copy-btn:hover { background:rgba(0,212,255,0.2); }
+  .copy-btn.copied { background:rgba(16,185,129,0.2); color:var(--green); border-color:rgba(16,185,129,0.3); }
+
+  .pay-note {
+    background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2);
+    border-radius:10px; padding:12px; font-size:0.75rem; color:var(--yellow);
+    margin-bottom:16px; text-align:center; line-height:1.5;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    width:100%; padding:16px; border-radius:14px; border:none;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    color:#000; font-weight:800; font-size:1rem;
+    cursor:pointer; transition:all 0.2s; font-family:'Noto Sans Georgian',sans-serif;
+  }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 30px rgba(0,212,255,0.3); }
+  .btn-primary:active { transform:none; }
+  .btn-secondary {
+    width:100%; padding:13px; border-radius:14px;
+    border:1px solid var(--border); background:transparent;
+    color:var(--text-dim); font-size:0.9rem; cursor:pointer;
+    transition:all 0.2s; margin-top:8px; font-family:'Noto Sans Georgian',sans-serif;
+  }
+  .btn-secondary:hover { border-color:var(--text-dim); color:var(--text); }
+
+  /* Verification */
+  .verification-screen { display:none; text-align:center; }
+  .verification-screen.visible { display:block; }
+  .spinner {
+    width:60px; height:60px; border-radius:50%;
+    border:3px solid var(--border); border-top-color:var(--accent);
+    animation:spin 1s linear infinite; margin:20px auto;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .verify-title { font-size:1.1rem; font-weight:700; margin-bottom:8px; }
+  .verify-sub { font-size:0.8rem; color:var(--text-dim); margin-bottom:24px; }
+  .verify-timer {
+    font-family:'Space Mono',monospace; font-size:2rem;
+    color:var(--accent); margin:16px 0;
+  }
+
+  /* Success screen */
+  .success-screen { display:none; text-align:center; }
+  .success-screen.visible { display:block; }
+  .success-icon {
+    font-size:4rem; margin:16px 0;
+    animation:bounce 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes bounce{from{transform:scale(0);}to{transform:scale(1);}}
+  .success-title { font-size:1.3rem; font-weight:800; margin-bottom:8px; color:var(--green); }
+  .success-machine {
+    background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3);
+    border-radius:12px; padding:14px; margin:16px 0;
+  }
+
+  /* Toast */
+  .toast {
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(100px);
+    background:var(--surface); border:1px solid var(--border);
+    padding:12px 20px; border-radius:12px; font-size:0.85rem;
+    z-index:999; transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    white-space:nowrap; box-shadow:0 8px 30px rgba(0,0,0,0.3);
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+  .toast.success { border-color:rgba(16,185,129,0.4); color:var(--green); }
+
+  /* SMS modal */
+  .sms-modal-bg {
+    position:fixed; inset:0; z-index:200;
+    background:rgba(0,0,0,0.7); backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    opacity:0; pointer-events:none; transition:opacity 0.3s;
+  }
+  .sms-modal-bg.open { opacity:1; pointer-events:all; }
+  .sms-modal {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; padding:28px; width:100%; max-width:360px;
+    transform:scale(0.9); transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .sms-modal-bg.open .sms-modal { transform:scale(1); }
+  .sms-title { font-size:1.1rem; font-weight:800; margin-bottom:8px; }
+  .sms-sub { font-size:0.8rem; color:var(--text-dim); margin-bottom:20px; }
+  .input-group { margin-bottom:14px; }
+  .input-label { font-size:0.72rem; color:var(--text-dim); margin-bottom:6px; display:block; }
+  .input-field {
+    width:100%; background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; padding:12px 14px; color:var(--text);
+    font-size:0.9rem; font-family:'Noto Sans Georgian',sans-serif;
+    outline:none; transition:border-color 0.2s;
+  }
+  .input-field:focus { border-color:var(--accent); }
+
+  /* Security badge */
+  .security-bar {
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    font-size:0.7rem; color:var(--text-muted); margin-top:16px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Maintenance overlay -->
+<div id="maintenance-overlay" class="hidden">
+  <div class="icon">🔧</div>
+  <div>საიტი დროებით მიუწვდომელია</div>
+  <div style="font-size:0.8rem;color:#475569;">ადმინი მუშაობს. მოიცადეთ...</div>
+</div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🚿</div>
+    <div class="logo-name">AquaWash</div>
+  </div>
+  <div class="status-badge">
+    <div class="status-dot"></div>
+    <span id="header-status">ონლაინ</span>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>დაასკანირე. გადაიხადე. დაიწყე.</h1>
+    <p>Self-service სამრეცხაო — BOG ან TBC-ით სწრაფი გადახდა.</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div> აირჩიე წერტილი</div>
+      <div class="step"><div class="step-num">2</div> გადაიხადე</div>
+      <div class="step"><div class="step-num">3</div> მანქანა ირთვება</div>
+    </div>
+  </div>
+
+  <div class="section-title">სარეცხი წერტილები</div>
+  <div class="machines-grid" id="machines-grid">
+    <!-- filled by JS -->
+  </div>
+</main>
+
+<!-- Payment modal -->
+<div class="modal-bg" id="pay-modal-bg">
+  <div class="modal">
+    <div class="modal-handle"></div>
+
+    <!-- Step 1: choose bank -->
+    <div id="step-bank">
+      <div class="modal-title" id="modal-machine-name">AquaWash #1</div>
+      <div class="modal-sub" id="modal-machine-sub">აირჩიე გადახდის მეთოდი</div>
+      <div class="bank-grid">
+        <div class="bank-btn" onclick="selectBank('bog')" id="bank-bog">
+          <div class="bank-icon">🏦</div>
+          <div class="bank-name">BOG</div>
+          <div class="bank-sub">საქართველოს ბანკი</div>
+        </div>
+        <div class="bank-btn" onclick="selectBank('tbc')" id="bank-tbc">
+          <div class="bank-icon">🏦</div>
+          <div class="bank-name">TBC</div>
+          <div class="bank-sub">თიბისი ბანკი</div>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">📱 ტელეფონი (SMS შეტყობინებისთვის — სურვილისამებრ)</label>
+        <input class="input-field" type="tel" id="phone-input" placeholder="+995 5XX XXX XXX">
+      </div>
+      <button class="btn-secondary" onclick="closeModal()">გაუქმება</button>
+    </div>
+
+    <!-- Step 2: payment details -->
+    <div class="pay-details" id="step-details">
+      <div class="modal-title">გადახდის დეტალები</div>
+      <div class="modal-sub" id="details-sub">BOG · საბანკო გადარიცხვა</div>
+      <div class="pay-amount-big" id="pay-amount">₾5</div>
+
+      <div class="pay-field">
+        <div>
+          <div class="pay-field-label">IBAN ანგარიში</div>
+          <div class="pay-field-value" id="d-iban">GE55BG0000000574788355</div>
+        </div>
+        <button class="copy-btn" onclick="copyField('d-iban',this)">📋 კოპირება</button>
+      </div>
+      <div class="pay-field">
+        <div>
+          <div class="pay-field-label">მიმღები</div>
+          <div class="pay-field-value" id="d-name">ჯიჭონაია რეზო</div>
+        </div>
+        <button class="copy-btn" onclick="copyField('d-name',this)">📋 კოპირება</button>
+      </div>
+      <div class="pay-field">
+        <div>
+          <div class="pay-field-label">დანიშნულება</div>
+          <div class="pay-field-value" id="d-purpose">AquaWash #1</div>
+        </div>
+        <button class="copy-btn" onclick="copyField('d-purpose',this)">📋 კოპირება</button>
+      </div>
+
+      <div class="pay-note">
+        ⏱ გადახდის შემდეგ, ბოქსი ავტომატურად ირთვება 1-2 წუთში.
+        <br>ბანკის აპიდან გადარიცხვის შემდეგ დააჭირე ღილაკს.
+      </div>
+
+      <button class="btn-primary" onclick="confirmPaid()">✅ გადავიხადე</button>
+      <button class="btn-secondary" onclick="backToBank()">← უკან</button>
+    </div>
+
+    <!-- Step 3: verifying -->
+    <div class="verification-screen" id="step-verify">
+      <div class="verify-title">გადახდა მოწმდება</div>
+      <div class="verify-sub">ბანკის API ამოწმებს ტრანზაქციას...</div>
+      <div class="spinner"></div>
+      <div class="verify-timer" id="verify-countdown">120</div>
+      <div style="font-size:0.75rem;color:var(--text-dim)">წამი დარჩა</div>
+      <div class="pay-note" style="margin-top:20px;">
+        🔒 გადახდა ავტომატურად მოწმდება.<br>
+        ბანკის webhook-ი ადასტურებს ტრანზაქციას.
+      </div>
+      <button class="btn-secondary" onclick="closeModal()">გაუქმება</button>
+    </div>
+
+    <!-- Step 4: success -->
+    <div class="success-screen" id="step-success">
+      <div class="success-icon">✅</div>
+      <div class="success-title">გადახდა დასტურდა!</div>
+      <div class="success-machine" id="success-info">
+        <div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:4px;">სარეცხი მანქანა</div>
+        <div style="font-size:1.1rem;font-weight:700;" id="success-machine-name">AquaWash #1</div>
+      </div>
+      <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:20px;line-height:1.6;">
+        მანქანა ჩაირთო! გახსენი ბოქსის კარი და ჩატვირთე სარეცხი. 
+        <span id="sms-sent-note"></span>
+      </p>
+      <button class="btn-primary" onclick="closeModal()">🏠 მთავარი</button>
+    </div>
+
+    <div class="security-bar">🔒 SSL დაცული · AquaWash v2.0</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== CONFIG (same as admin localStorage) ==========
+const DEFAULT_CONFIG = {
+  siteName: 'AquaWash',
+  headline: 'დაასკანირე. გადაიხადე. დაიწყე რეცხვა.',
+  subheadline: 'Self-service · BOG · TBC · უსაფრთხო გადახდა',
+  siteEnabled: true,
+  paymentTimeout: 5, // minutes
+  washTimeout: 30,   // minutes
+  bogEnabled: true,
+  tbcEnabled: true,
+  bogIban: 'GE55BG0000000574788355',
+  bogMerchant: '',
+  tbcIban: 'GE29TB0000000101904153',
+  tbcMerchant: '',
+  ownerName: 'ჯიჭონაია რეზო',
+  machines: [
+    {id:1, name:'AquaWash #1', price:5, status:'free', busyUntil:null},
+    {id:2, name:'AquaWash #2', price:5, status:'free', busyUntil:null},
+    {id:3, name:'AquaWash #3', price:5, status:'offline', busyUntil:null},
+  ]
+};
+
+function getConfig() {
+  try {
+    const s = localStorage.getItem('aquawash_config');
+    return s ? {...DEFAULT_CONFIG, ...JSON.parse(s)} : DEFAULT_CONFIG;
+  } catch(e) { return DEFAULT_CONFIG; }
+}
+
+let config = getConfig();
+let selectedMachine = null;
+let selectedBank = null;
+let verifyInterval = null;
+let verifySeconds = 0;
+
+// ===== Init =====
+function init() {
+  config = getConfig();
+  if (!config.siteEnabled) {
+    document.getElementById('maintenance-overlay').classList.remove('hidden');
+    return;
+  }
+  applyConfig();
+  renderMachines();
+}
+
+function applyConfig() {
+  // Hero heading
+  const h1 = document.querySelector('.hero h1');
+  if (h1 && config.headline) h1.textContent = config.headline;
+  // Hero subheadline
+  const heroP = document.querySelector('.hero p');
+  if (heroP && config.subheadline) heroP.textContent = config.subheadline;
+  // Logo name
+  const logoName = document.querySelector('.logo-name');
+  if (logoName && config.siteName) logoName.textContent = config.siteName;
+  // Logo emoji
+  const logoIcon = document.querySelector('header .logo-icon');
+  if (logoIcon && config.logoEmoji) logoIcon.textContent = config.logoEmoji;
+  // Page title
+  if (config.siteName) document.title = config.siteName + ' — სამრეცხაო';
+}
+
+function renderMachines() {
+  const grid = document.getElementById('machines-grid');
+  grid.innerHTML = '';
+  (config.machines || DEFAULT_CONFIG.machines).forEach((m, i) => {
+    const card = document.createElement('div');
+    card.className = 'machine-card ' + m.status;
+    card.style.animationDelay = (i * 0.08) + 's';
+
+    let timerHtml = '';
+    let remaining = 0;
+    if (m.status === 'busy' && m.busyUntil) {
+      remaining = Math.max(0, Math.floor((m.busyUntil - Date.now()) / 1000));
+      const pct = Math.max(0, (remaining / (config.washTimeout * 60)) * 100);
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      timerHtml = `
+        <div class="timer-bar-wrap">
+          <div class="timer-label">
+            <span>დარჩენილი დრო</span>
+            <span class="timer-countdown" id="timer-${m.id}">${mins}:${secs.toString().padStart(2,'0')}</span>
+          </div>
+          <div class="timer-bar"><div class="timer-fill" id="bar-${m.id}" style="width:${pct}%"></div></div>
+        </div>`;
+    }
+
+    const statusLabel = {free:'თავისუფალი', busy:'დაკავებული', offline:'გათიშული'}[m.status];
+    card.innerHTML = `
+      <div class="machine-header">
+        <div class="machine-num">#${m.id}</div>
+        <div class="machine-status-badge">${statusLabel}</div>
+      </div>
+      <div class="machine-name">${m.name}</div>
+      <div class="machine-price">₾${m.price}</div>
+      ${timerHtml}
+    `;
+    if (m.status === 'free') card.onclick = () => openPayModal(m);
+    grid.appendChild(card);
+  });
+  startTimers();
+}
+
+function startTimers() {
+  setInterval(() => {
+    (config.machines || []).forEach(m => {
+      if (m.status === 'busy' && m.busyUntil) {
+        const remaining = Math.max(0, Math.floor((m.busyUntil - Date.now()) / 1000));
+        const el = document.getElementById('timer-' + m.id);
+        const bar = document.getElementById('bar-' + m.id);
+        if (el) {
+          const mins = Math.floor(remaining / 60);
+          const secs = remaining % 60;
+          el.textContent = mins + ':' + secs.toString().padStart(2,'0');
+        }
+        if (bar) {
+          const pct = Math.max(0, (remaining / (config.washTimeout * 60)) * 100);
+          bar.style.width = pct + '%';
+        }
+      }
+    });
+  }, 1000);
+}
+
+// ===== Modal =====
+function openPayModal(machine) {
+  selectedMachine = machine;
+  selectedBank = null;
+  document.getElementById('modal-machine-name').textContent = machine.name;
+  document.getElementById('modal-machine-sub').textContent = '₾' + machine.price + ' · აირჩიე გადახდის მეთოდი';
+  document.getElementById('pay-amount').textContent = '₾' + machine.price;
+  document.getElementById('d-purpose').textContent = machine.name;
+
+  // Show/hide banks
+  document.getElementById('bank-bog').style.display = config.bogEnabled ? '' : 'none';
+  document.getElementById('bank-tbc').style.display = config.tbcEnabled ? '' : 'none';
+
+  showStep('bank');
+  document.getElementById('pay-modal-bg').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('pay-modal-bg').classList.remove('open');
+  clearInterval(verifyInterval);
+}
+
+function showStep(step) {
+  ['bank','details','verify','success'].forEach(s => {
+    const el = document.getElementById('step-' + s);
+    if (!el) return;
+    el.classList.remove('visible');
+    el.style.display = 'none';
+  });
+  const target = document.getElementById('step-' + step);
+  if (target) { target.style.display = 'block'; target.classList.add('visible'); }
+}
+
+function selectBank(bank) {
+  selectedBank = bank;
+  document.querySelectorAll('.bank-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('bank-' + bank).classList.add('selected');
+
+  const iban = bank === 'bog' ? config.bogIban : config.tbcIban;
+  const bankName = bank === 'bog' ? 'BOG · საქართველოს ბანკი' : 'TBC · თიბისი ბანკი';
+  document.getElementById('d-iban').textContent = iban || (bank === 'bog' ? 'GE55BG0000000574788355' : 'GE29TB0000000101904153');
+  document.getElementById('d-name').textContent = config.ownerName || 'ჯიჭონაია რეზო';
+  document.getElementById('details-sub').textContent = bankName;
+
+  setTimeout(() => showStep('details'), 200);
+}
+
+function backToBank() { showStep('bank'); }
+
+function copyField(id, btn) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ კოპირდა';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 კოპირება'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function confirmPaid() {
+  showStep('verify');
+  verifySeconds = 120;
+  document.getElementById('verify-countdown').textContent = verifySeconds;
+
+  // Simulate webhook verification
+  verifyInterval = setInterval(() => {
+    verifySeconds--;
+    document.getElementById('verify-countdown').textContent = verifySeconds;
+    if (verifySeconds <= 0) {
+      clearInterval(verifyInterval);
+      // Simulate success after 3-8 seconds randomly
+    }
+  }, 1000);
+
+  // Simulate payment confirmation (in real app: webhook from bank)
+  const delay = 3000 + Math.random() * 5000;
+  setTimeout(() => {
+    clearInterval(verifyInterval);
+    onPaymentConfirmed();
+  }, delay);
+}
+
+function onPaymentConfirmed() {
+  // Mark machine as busy
+  const machines = config.machines || [];
+  const m = machines.find(x => x.id === selectedMachine.id);
+  if (m) {
+    m.status = 'busy';
+    m.busyUntil = Date.now() + config.washTimeout * 60 * 1000;
+    localStorage.setItem('aquawash_config', JSON.stringify(config));
+  }
+
+  // Save transaction
+  const txns = JSON.parse(localStorage.getItem('aquawash_txns') || '[]');
+  txns.unshift({
+    id: 'TXN' + Date.now(),
+    machine: selectedMachine.name,
+    amount: selectedMachine.price,
+    bank: selectedBank?.toUpperCase() || 'BOG',
+    time: new Date().toLocaleString('ka-GE'),
+    status: 'success',
+    phone: document.getElementById('phone-input')?.value || ''
+  });
+  localStorage.setItem('aquawash_txns', JSON.stringify(txns.slice(0, 200)));
+
+  // SMS note
+  const phone = document.getElementById('phone-input')?.value;
+  let smsNote = '';
+  if (phone) smsNote = `SMS გაეგზავნა ${phone}-ზე.`;
+  document.getElementById('sms-sent-note').textContent = smsNote;
+  document.getElementById('success-machine-name').textContent = selectedMachine.name;
+
+  showStep('success');
+  renderMachines();
+  showToast('✅ ' + selectedMachine.name + ' ჩაირთო!', 'success');
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Close modal on bg click
+document.getElementById('pay-modal-bg').addEventListener('click', e => {
+  if (e.target === document.getElementById('pay-modal-bg')) closeModal();
+});
+
+init();
+
+// Listen for config changes from admin
+window.addEventListener('storage', () => { config = getConfig(); applyConfig(); renderMachines(); });
+</script>
+</body>
+</html>
